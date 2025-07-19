@@ -8,8 +8,10 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
+        cleanWs() // <-- Clean workspace to avoid permission issues
         sh 'echo passed'
         //git branch: 'main', url: 'https://github.com/iam-veeramalla/Jenkins-Zero-To-Hero.git'
+        checkout scm
       }
     }
     stage('Build and Test') {
