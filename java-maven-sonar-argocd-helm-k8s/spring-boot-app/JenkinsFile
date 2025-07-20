@@ -2,9 +2,10 @@ pipeline {
   agent {
     docker {
       image 'gayathrimurugaian/maven-docker-agent:v1'
-      args '--user root -v /var/run/docker.sock:/var/run/docker.sock --privileged' // added --privileged
+      args '-v /var/run/docker.sock:/var/run/docker.sock --privileged'
     }
   }
+
   stages {
     stage('Checkout') {
       steps {
@@ -13,17 +14,20 @@ pipeline {
         checkout scm
       }
     }
+
     stage('Debug Workspace') {
       steps {
         sh 'pwd'
         sh 'ls -lR java-maven-sonar-argocd-helm-k8s'
       }
     }
+
     stage('Build and Test') {
       steps {
         sh "cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package"
       }
     }
+
     stage('Static Code Analysis') {
       environment {
         SONAR_URL = "http://15.157.69.245:9000"
@@ -34,6 +38,7 @@ pipeline {
         }
       }
     }
+
     stage('Build and Push Docker Image') {
       environment {
         DOCKER_IMAGE = "gayathrimurugaian/india:${BUILD_NUMBER}"
@@ -49,6 +54,7 @@ pipeline {
         }
       }
     }
+
     stage('Update Deployment File') {
       environment {
         GIT_REPO_NAME = "cicd_argocd"
@@ -56,15 +62,14 @@ pipeline {
       }
       steps {
         withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-          sh '''
+          sh """
             git config user.email "mgayathri181@gmail.com"
             git config user.name "mgayathri181"
-            BUILD_NUMBER=${BUILD_NUMBER}
             sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
             git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-            git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+            git commit -m "Update deployment image to version ${BUILD_NUMBER}" || echo "No changes to commit"
             git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
-          '''
+          """
         }
       }
     }
