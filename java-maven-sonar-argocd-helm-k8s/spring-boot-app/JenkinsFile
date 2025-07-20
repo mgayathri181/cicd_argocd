@@ -1,44 +1,21 @@
 pipeline {
   agent {
     docker {
-      image 'shashankp05/shashank'
-       args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+      image 'gayathrimurugaian/maven-docker-agent:v5'
+      args '-u root --privileged -v /var/run/docker.sock:/var/run/docker.sock'
     }
-  }
-
-  environment {
-    SONAR_URL = "http://15.157.69.245:9000"
-    GIT_REPO_NAME = "cicd_argocd"
-    GIT_USER_NAME = "mgayathri181"
-    DOCKER_IMAGE = "gayathrimurugaian/my-springboot-app:${BUILD_NUMBER}"
   }
 
   stages {
-
-    stage('Checkout') {
+    stage('Basic Shell Check') {
       steps {
-        cleanWs()
-        echo '🔄 Checkout started'
-        checkout scm
-      }
-    }
-    stage('Build and Test') {
-      steps {
-        echo '⚙️ Build and test'
         sh '''
-pwd
-ls -l
-cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
-mvn clean package
-'''
+          echo "✅ Shell works"
+          which bash
+          which ps
+          ps aux | head -n 5
+        '''
       }
-    }
-  }
-
-  post {
-    failure {
-      echo "Build failed. Dumping workspace contents:"
-      sh 'ls -la'
     }
   }
 }
