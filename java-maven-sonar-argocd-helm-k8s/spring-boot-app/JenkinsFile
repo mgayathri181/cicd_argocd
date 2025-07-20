@@ -3,6 +3,7 @@ pipeline {
     docker {
       image 'gayathrimurugaian/maven-docker-agent:v8'
       args '-u root -v /var/run/docker.sock:/var/run/docker.sock --privileged'
+    customWorkspace '/var/lib/jenkins/workspace/ultimate-demo@3'
     }
   }
 
@@ -14,6 +15,18 @@ pipeline {
   }
 
   stages {
+    stage('Clean Workspace Only') {
+      steps {
+        echo '🧹 Cleaning Jenkins workspace before starting'
+        cleanWs()
+      }
+    }
+
+    stage('Checkout') {
+      steps {
+        git branch: 'master', url: "https://github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git"
+      }
+    }
 
     stage('Build and Test') {
       steps {
