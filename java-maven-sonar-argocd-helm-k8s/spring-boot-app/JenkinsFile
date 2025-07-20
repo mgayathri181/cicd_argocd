@@ -17,7 +17,7 @@ pipeline {
 
     stage('Checkout') {
       steps {
-       //cleanWs()
+        cleanWs()
         echo '🔄 Checkout started'
         checkout scm
       }
@@ -25,11 +25,20 @@ pipeline {
     stage('Build and Test') {
       steps {
         echo '⚙️ Build and test'
-        sh '''#!/bin/bash
-        cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
-        mvn clean package
-        '''
+        sh '''
+pwd
+ls -l
+cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+mvn clean package
+'''
       }
+    }
+  }
+
+  post {
+    failure {
+      echo "Build failed. Dumping workspace contents:"
+      sh 'ls -la'
     }
   }
 }
