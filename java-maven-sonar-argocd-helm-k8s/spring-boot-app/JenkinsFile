@@ -1,117 +1,85 @@
 pipeline {
-    agent any
+  agent {
+    docker {
+      image 'docker:latest' // or any image with Docker + Maven installed
+      args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+    }
+  }
 
-    environment {
-        GIT_USER_NAME = 'mgayathri181'
-        GIT_REPO_NAME = 'cicd_argocd'
+  environment {
+    GIT_REPO_NAME = "cicd_argocd"
+    GIT_USER_NAME = "mgayathri181"
+    DOCKER_IMAGE = "gayathrimurugaian/ultimate-cicd:${BUILD_NUMBER}"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        echo 'Skipping Git checkout (handled manually in update stage)'
+        // OR if you want Jenkins to do it: uncomment this
+        // git(branch: 'main', url: 'https://github.com/mgayathri181/cicd_argocd.git')
+      }
+    }
+
+    stage('Build and Test') {
+      steps {
+        sh '''
+          cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+          mvn clean package
+        '''
+      }
+    }
+
+    stage('Static Code Analysis') {
+      environment {
         SONAR_URL = "http://15.157.69.245:9000"
-        IMAGE_TAG = "v1.${BUILD_NUMBER}"
+      }
+      steps {
+        withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
+          sh '''
+            cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+            mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=$SONAR_URL
+          '''
+        }
+      }
     }
 
-    stages {
-        stage('Git Checkout') {
-            steps {
-                git(branch: 'main', url: 'https://github.com/mgayathri181/cicd_argocd.git')
-            }
+    stage('Build and Push Docker Image') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'docker-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+          sh '''
+            cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+            docker build -t $DOCKER_IMAGE .
+            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+            docker push $DOCKER_IMAGE
+          '''
         }
-
-        stage('Build with Maven') {
-            steps {
-                sh 'cd spring-boot-app && mvn clean package'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                sh 'cd spring-boot-app && mvn test'
-            }
-        }
-
-        stage('Code Analysis - SonarQube') {
-            steps {
-                withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
-                    sh '''
-                        cd spring-boot-app
-                        mvn sonar:sonar \
-                          -Dsonar.login=$SONAR_AUTH_TOKEN \
-                          -Dsonar.host.url=$SONAR_URL
-                    '''
-                }
-            }
-        }
-
-        stage('Docker Build') {
-            steps {
-                script {
-                    sh """
-                        echo "Building Docker image..."
-                        docker build -t $IMAGE_NAME ./spring-boot-app
-
-                        echo "Tagging image with: $IMAGE_TAG"
-                        docker tag $IMAGE_NAME:latest $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
-                        docker tag $IMAGE_NAME:latest $ECR_REGISTRY/$IMAGE_NAME:latest
-
-                        echo "Pushing images to ECR..."
-                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
-                        docker push $ECR_REGISTRY/$IMAGE_NAME:$IMAGE_TAG
-                        docker push $ECR_REGISTRY/$IMAGE_NAME:latest
-                    """
-                }
-            }
-        }
-
-           stage('Update Deployment File in Git') {
-            steps {
-                withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-                    sh '''
-                        set -e
-
-                        echo "Cloning the repo..."
-                        rm -rf $GIT_REPO_NAME
-                        git clone https://$GITHUB_TOKEN@github.com/$GIT_USER_NAME/$GIT_REPO_NAME.git
-                        cd $GIT_REPO_NAME
-
-                        echo "Configuring Git user..."
-                        git config user.email "mithra.balasubramaniam05@gmail.com"
-                        git config user.name "Mithra1995"
-
-                        echo "Updating deployment image tag..."
-                        sed -i "s|$ECR_URI:.*|$ECR_URI:$IMAGE_TAG|g" spring-boot-app-manifests/deployment.yml
-
-                        git add spring-boot-app-manifests/deployment.yml
-                        git commit -m "Update deployment image to version $IMAGE_TAG" || echo "No changes to commit"
-                        git push https://$GITHUB_TOKEN@github.com/$GIT_USER_NAME/$GIT_REPO_NAME.git HEAD:main
-                    '''
-                }
-            }
-        }
+      }
     }
 
-    post {
-        success {
-            emailext(
-                subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: """<p>Hi Team,</p>
-                         <p>The Jenkins build has <b>succeeded</b>.</p>
-                         <p>Build: <a href="${env.BUILD_URL}">${env.JOB_NAME} #${env.BUILD_NUMBER}</a></p>""",
-                to: 'mithra.balasubramaniam05@gmail.com',
-                mimeType: 'text/html'
-            )
-        }
+    stage('Update Deployment File in Git') {
+      steps {
+        withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+          sh '''
+            set -e
+            echo "Cloning repo..."
+            rm -rf $GIT_REPO_NAME
+            git clone https://$GITHUB_TOKEN@github.com/$GIT_USER_NAME/$GIT_REPO_NAME.git
+            cd $GIT_REPO_NAME
 
-        failure {
-            emailext(
-                subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: """<p>Hi Team,</p>
-                         <p>The Jenkins build has <b>failed</b>.</p>
-                         <p>Build: <a href="${env.BUILD_URL}">${env.JOB_NAME} #${env.BUILD_NUMBER}</a></p>""",
-                to: 'mithra.balasubramaniam05@gmail.com',
-                mimeType: 'text/html'
-            )
-        }
+            echo "Configuring Git"
+            git config user.email "your-email@example.com"
+            git config user.name "$GIT_USER_NAME"
 
-        always {
-            echo "📬 Notification logic executed after the pipeline run"
+            echo "Updating deployment image tag"
+            sed -i "s/replaceImageTag/$BUILD_NUMBER/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+
+            git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+            git commit -m "Update deployment image to version $BUILD_NUMBER" || echo "No changes to commit"
+            git push https://$GITHUB_TOKEN@github.com/$GIT_USER_NAME/$GIT_REPO_NAME.git HEAD:main
+          '''
         }
+      }
     }
+  }
 }
