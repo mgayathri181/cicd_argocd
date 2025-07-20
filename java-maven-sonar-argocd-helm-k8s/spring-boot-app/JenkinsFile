@@ -14,21 +14,6 @@ pipeline {
   }
 
   stages {
-    stage('Clean workspace') {
-      steps {
-        echo 'Cleaning workspace with permission fix'
-        sh '''
-          sudo chmod -R u+rwX . || true
-          sudo rm -rf *
-        '''
-      }
-    }
-
-    stage('Checkout') {
-      steps {
-        echo 'Skipping Git checkout (handled manually in update stage)'
-      }
-    }
 
     stage('Build and Test') {
       steps {
