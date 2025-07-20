@@ -13,12 +13,15 @@ pipeline {
     DOCKER_IMAGE = "gayathrimurugaian/my-springboot-app:${BUILD_NUMBER}"
   }
 
-  stages {
-    stage('Cleanup workspace') {
-      steps {
-        sh 'sudo rm -rf *'
-      }
-    }
+stage('Clean workspace') {
+  steps {
+    echo 'Cleaning workspace with permission fix'
+    sh '''
+      sudo chmod -R u+rwX . || true
+      sudo rm -rf *
+    '''
+  }
+}
 
     stage('Checkout') {
       steps {
