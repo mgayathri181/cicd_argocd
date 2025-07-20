@@ -26,11 +26,12 @@ pipeline {
 
     stage('Build and Test') {
       steps {
-        echo '⚙️ Build and test'
-        sh "cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package"
+        sh '''
+          cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+          mvn clean package
+        '''
       }
     }
-
     stage('Static Code Analysis') {
       steps {
         echo '🧪 Running SonarQube Analysis'
