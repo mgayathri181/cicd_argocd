@@ -13,7 +13,19 @@ pipeline {
     DOCKER_IMAGE = "gayathrimurugaian/my-springboot-app:${BUILD_NUMBER}"
   }
 
+  options {
+    skipDefaultCheckout() // We'll manage Git ourselves
+  }
+
   stages {
+
+    stage('Clean Workspace') {
+      steps {
+        echo '🧹 Cleaning workspace'
+        cleanWs()
+        checkout scm
+      }
+    }
 
     stage('Build and Test') {
       steps {
@@ -43,7 +55,7 @@ pipeline {
         script {
           sh """
             cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
-            docker build -t ${DOCKER_IMAGE} .
+            docker build --no-cache -t ${DOCKER_IMAGE} .
           """
           docker.withRegistry('https://index.docker.io/v1/', 'docker-cred') {
             docker.image("${DOCKER_IMAGE}").push()
@@ -61,8 +73,13 @@ pipeline {
             git config user.name "${GIT_USER_NAME}"
             sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
             git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-            git commit -m "Update deployment image to version ${BUILD_NUMBER}" || echo "No changes to commit"
-            git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
+
+            if git diff --cached --quiet; then
+              echo "No changes to commit"
+            else
+              git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+              git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
+            fi
           """
         }
       }
@@ -71,7 +88,7 @@ pipeline {
 
   post {
     failure {
-      echo "Build failed. Printing workspace contents:"
+      echo "❌ Build failed. Printing workspace contents:"
       sh 'ls -laR'
     }
   }
