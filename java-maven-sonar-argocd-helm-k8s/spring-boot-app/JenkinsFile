@@ -12,7 +12,8 @@ pipeline {
     GIT_USER_NAME = "mgayathri181"
     DOCKER_IMAGE = "gayathrimurugaian/my-springboot-app:${BUILD_NUMBER}"
   }
-
+    stages
+{
      stage('Checkout') {
       steps {
         echo 'Skipping Git checkout (handled manually in update stage)'
@@ -69,6 +70,7 @@ pipeline {
             git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
           """
         }
+       }
       }
     }
   }
