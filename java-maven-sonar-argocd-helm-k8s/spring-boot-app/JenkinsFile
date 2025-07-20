@@ -1,18 +1,17 @@
 pipeline {
   agent {
     docker {
-      image 'gayathrimurugaian/maven-docker-agent:v5'
+      image 'gayathrimurugaian/maven-docker-agent:v6'
       args '-u root --privileged -v /var/run/docker.sock:/var/run/docker.sock'
     }
   }
 
   stages {
-    stage('Basic Shell Check') {
+    stage('Test Shell') {
       steps {
         sh '''
-          echo "✅ Shell works"
-          which bash
-          which ps
+          echo "✅ Basic Shell Execution"
+          whoami
           ps aux | head -n 5
         '''
       }
