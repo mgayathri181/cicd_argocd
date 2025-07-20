@@ -14,12 +14,6 @@ pipeline {
   }
 
   stages {
-    stage('Checkout') {
-      steps {
-        cleanWs()  // Clean workspace to avoid permission issues
-        git branch: 'master', url: "https://github.com/mgayathri181/cicd_argocd/${GIT_USER_NAME}/${GIT_REPO_NAME}.git"
-      }
-    }
 
     stage('Build and Test') {
       steps {
