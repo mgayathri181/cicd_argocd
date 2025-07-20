@@ -22,5 +22,12 @@ pipeline {
         checkout scm
       }
     }
+     stage('Debug Workspace') {
+      steps {
+        echo '🔍 Debug workspace structure'
+        sh 'pwd'
+        sh 'ls -lR java-maven-sonar-argocd-helm-k8s'
+      }
+    }
   }
 }
