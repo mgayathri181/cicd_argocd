@@ -13,6 +13,13 @@ pipeline {
         //git branch: 'main', url: 'https://github.com/iam-veeramalla/Jenkins-Zero-To-Hero.git'
         checkout scm
       }
+      stage('Debug Workspace') {
+         steps {
+        sh 'pwd'
+        sh 'ls -lR java-maven-sonar-argocd-helm-k8s'
+      }
+    }
+
     }
     stage('Build and Test') {
       steps {
