@@ -11,7 +11,7 @@ pipeline {
     stages {
         stage('Git Checkout') {
             steps {
-                git branch: 'main', url: https://github.com/mgayathri181/cicd_argocd'
+                git(branch: 'main', url: 'https://github.com/mgayathri181/cicd_argocd.git')
             }
         }
 
