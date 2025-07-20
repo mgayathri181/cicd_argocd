@@ -19,12 +19,19 @@ pipeline {
         cleanWs()
         echo '🔄 Checkout started'
         checkout scm
+        
+        // Debug: print current directory and list contents after checkout
+        sh 'pwd'
+        sh 'ls -la'
       }
     }
 
     stage('Build & Test') {
       steps {
+        // Adjust this directory path according to your repo root structure!
         dir('java-maven-sonar-argocd-helm-k8s/spring-boot-app') {
+          echo '📂 Contents of the build directory:'
+          sh 'ls -la'
           sh 'mvn clean verify'
         }
       }
