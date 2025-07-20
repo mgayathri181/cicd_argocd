@@ -22,11 +22,10 @@ pipeline {
         checkout scm
       }
     }
-     stage('Debug Workspace') {
+    stage('Build and Test') {
       steps {
-        echo '🔍 Debug workspace structure'
-        sh 'pwd'
-        sh 'ls -lR java-maven-sonar-argocd-helm-k8s'
+        echo '⚙️ Build and test'
+        sh "cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package"
       }
     }
   }
