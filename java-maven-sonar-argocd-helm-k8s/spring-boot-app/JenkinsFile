@@ -13,23 +13,13 @@ pipeline {
   }
   stages {
     stage('Clean Workspace') {
-  steps {
-    echo '🧹 Cleaning workspace with sudo permissions'
-    sh '''
-      sudo chown -R $(whoami):$(whoami) ${WORKSPACE} || true
-      sudo chmod -R u+rw ${WORKSPACE} || true
-      rm -rf ${WORKSPACE}/* ${WORKSPACE}/.[!.]* || true
-    '''
-  }
-}
+      steps {
+        cleanWs()  // Jenkins built-in workspace cleaner
+      }
+    }
     stage('Checkout') {
       steps {
         checkout scm
-      }
-    }
-    stage('Test Shell') {
-      steps {
-        sh 'echo Hello from inside container'
       }
     }
     stage('Build and Test') {
