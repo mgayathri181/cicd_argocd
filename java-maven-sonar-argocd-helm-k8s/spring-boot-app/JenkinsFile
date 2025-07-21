@@ -11,5 +11,12 @@ pipeline {
         sh 'echo Hello from inside container'
       }
     }
+    stage('Build and Test') {
+      steps {
+        echo '⚙️ Build and test'
+        // Your bash command inside a single string is perfect.
+        sh "bash -c 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'"
+      }
+    }
   }
 }
