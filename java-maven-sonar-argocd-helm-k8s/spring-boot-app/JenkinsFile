@@ -14,11 +14,19 @@ pipeline {
   }
 
   stages {
+
+    stage('Clean Workspace') {
+      steps {
+        cleanWs()
+      }
+    }
+
     stage('Checkout') {
       steps {
         git branch: 'master', url: "https://github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git"
       }
     }
+
     stage('Build and Test') {
       steps {
         echo '⚙️ Build and test'
@@ -28,6 +36,7 @@ pipeline {
         '''
       }
     }
+
     stage('Static Code Analysis') {
       steps {
         echo '🧪 Running SonarQube Analysis'
@@ -39,6 +48,7 @@ pipeline {
         }
       }
     }
+
     stage('Build and Push Docker Image') {
       environment {
         REGISTRY_CREDENTIALS = credentials('docker-cred')
@@ -56,6 +66,7 @@ pipeline {
         }
       }
     }
+
     stage('Update Deployment File') {
       steps {
         echo '🚀 Updating deployment YAML for ArgoCD'
