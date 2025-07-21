@@ -13,12 +13,15 @@ pipeline {
   }
   stages {
     stage('Clean Workspace') {
-      steps {
-        echo '🧹 Cleaning workspace to fix permission issues'
-        // Force remove all files including hidden ones safely
-        sh 'rm -rf * .[^.]* || true'
-      }
-    }
+  steps {
+    echo '🧹 Cleaning workspace with sudo permissions'
+    sh '''
+      sudo chown -R $(whoami):$(whoami) ${WORKSPACE} || true
+      sudo chmod -R u+rw ${WORKSPACE} || true
+      rm -rf ${WORKSPACE}/* ${WORKSPACE}/.[!.]* || true
+    '''
+  }
+}
     stage('Checkout') {
       steps {
         checkout scm
