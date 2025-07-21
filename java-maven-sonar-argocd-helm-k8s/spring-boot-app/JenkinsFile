@@ -12,14 +12,9 @@ pipeline {
     DOCKER_IMAGE = "gayathrimurugaian/my-springboot-app:${BUILD_NUMBER}"
   }
   stages {
-    stage('Clean Workspace') {
+    stage('Test Shell') {
       steps {
-        cleanWs()  // Jenkins built-in workspace cleaner
-      }
-    }
-    stage('Checkout') {
-      steps {
-        checkout scm
+        sh 'echo Hello from inside container'
       }
     }
     stage('Build and Test') {
