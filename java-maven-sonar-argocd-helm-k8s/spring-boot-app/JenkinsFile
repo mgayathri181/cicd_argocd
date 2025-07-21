@@ -12,6 +12,18 @@ pipeline {
     DOCKER_IMAGE = "gayathrimurugaian/my-springboot-app:${BUILD_NUMBER}"
   }
   stages {
+    stage('Clean Workspace') {
+      steps {
+        echo '🧹 Cleaning workspace to fix permission issues'
+        // Force remove all files including hidden ones safely
+        sh 'rm -rf * .[^.]* || true'
+      }
+    }
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
     stage('Test Shell') {
       steps {
         sh 'echo Hello from inside container'
