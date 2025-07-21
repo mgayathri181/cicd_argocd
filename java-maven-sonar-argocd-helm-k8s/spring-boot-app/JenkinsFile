@@ -12,10 +12,21 @@ pipeline {
         git branch: 'master', url: "https://github.com/mgayathri181/cicd_argocd.git"
       }
     }
+
     stage('List files') {
       steps {
         sh 'ls -la'
         sh 'ls -la java-maven-sonar-argocd-helm-k8s/spring-boot-app'
+      }
+    }
+
+    stage('Build and Test') {
+      steps {
+        echo '⚙️ Build and test'
+        sh '''
+          cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+          mvn clean package
+        '''
       }
     }
   }
