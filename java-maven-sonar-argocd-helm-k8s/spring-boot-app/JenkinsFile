@@ -5,6 +5,12 @@ pipeline {
       args '--entrypoint="" -u root -v /var/run/docker.sock:/var/run/docker.sock --privileged'
     }
   }
+  environment {
+    SONAR_URL = "http://15.157.69.245:9000"
+    GIT_REPO_NAME = "cicd_argocd"
+    GIT_USER_NAME = "mgayathri181"
+    DOCKER_IMAGE = "gayathrimurugaian/my-springboot-app:${BUILD_NUMBER}"
+  }
   stages {
     stage('Test Shell') {
       steps {
@@ -14,8 +20,18 @@ pipeline {
     stage('Build and Test') {
       steps {
         echo '⚙️ Build and test'
-        // Your bash command inside a single string is perfect.
         sh "bash -c 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'"
+      }
+    }
+    stage('Static Code Analysis') {
+      steps {
+        echo '🧪 Running SonarQube Analysis'
+        withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
+          sh """
+            cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+            mvn sonar:sonar -Dsonar.login=${SONAR_AUTH_TOKEN} -Dsonar.host.url=${SONAR_URL}
+          """
+        }
       }
     }
   }
